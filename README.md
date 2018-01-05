@@ -11,14 +11,13 @@ The Zcash Sprout circuit is defined in the `zcash/circuit/` directory. It makes 
 The gadget library includes a framework for adding annotations to variables and constraints (they are ignored unless `DEBUG` is defined). These annotations are useful for understanding the structure of the circuit. Note that unlike the example gadgets provided in the libsnark, the new gadgets defined in Zcash do not supply annotations, but this branch fixes that. :)
 Using these annotations, we can export the circuit to a file, which we can then input into visualization tools and other libraries.
 
-In this experiment, we just repurpose the "GenerateParams" utility to dump the circuit in a format resembling the output of the `du` (disk usage) utility. By feeding this into a treemap library, we get the following visualization of the Sprout circuit:
-
+In this experiment, we just repurpose the "GenerateParams" utility to dump the circuit in a format resembling the output of the `du` (disk usage) utility. By feeding this into the `webtreemap` library, we get an interactive HTML visualization of the Sprout Circuit. See the screenshot:
 ![zcash sprout circuit treemap](https://raw.githubusercontent.com/amiller/zcash/circuit-annotations/sprout-treemap.png)
 
 
 Instructions
 ============
-1. Build the zcash dependences
+1. Build the zcash dependencies
 ```sh
 zcutil/build.sh
 ```
