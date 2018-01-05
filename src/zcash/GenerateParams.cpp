@@ -1,3 +1,5 @@
+#define DEBUG 1 // Turn debug on for annotations
+
 #include "zcash/JoinSplit.hpp"
 
 #include <iostream>
@@ -10,7 +12,7 @@ int main(int argc, char **argv)
     }
 
     if(argc != 4) {
-        std::cerr << "Usage: " << argv[0] << " provingKeyFileName verificationKeyFileName r1csFileName" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " provingKeyFileName verificationKeyFileName r1csFileName " << std::endl;
         return 1;
     }
 

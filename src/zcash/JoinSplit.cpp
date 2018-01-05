@@ -1,3 +1,4 @@
+#define DEBUG 1 // Turn debug on for annotations
 #include "JoinSplit.hpp"
 #include "prf.h"
 #include "sodium.h"
@@ -5,6 +6,7 @@
 #include "zcash/util.h"
 
 #include <memory>
+#include <regex>
 
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
@@ -63,6 +65,70 @@ void loadFromFile(const std::string path, T& objIn) {
     objIn = std::move(obj);
 }
 
+  using namespace std;
+
+template<typename FieldT> void writeLinComb(std::ostream &out, const linear_combination<FieldT>& lc, const r1cs_constraint_system<FieldT> &cs)
+{
+  bool first = true;
+  out << "(";
+  for (const linear_term<FieldT>& lt : lc.terms)
+    {
+      if (!first) out << " + "; first = false;
+      if (lt.index == 0) {
+	if (lt.coeff == -FieldT::one()) out << "-1";
+	else if (lt.coeff == -FieldT::one() - FieldT::one()) out << "-2";
+	else out << lt.coeff.as_ulong();
+      } else {
+	if (lt.coeff == -FieldT::one())
+	  out << "-var_" << lt.index;
+	else if (lt.coeff == -FieldT::one() - FieldT::one())
+	  out << "-2 * var_" << lt.index;
+	else if (lt.coeff == FieldT::one())
+	  out << "var_" << lt.index;
+	else
+	  out << lt.coeff.as_ulong() << " * var_" << lt.index;
+	//auto it = cs.variable_annotations.find(lt.index);
+	//if (it != cs.variable_annotations.end())
+	//  out << "[" << it->second << "]";
+      }
+    }
+  out << ")";
+}
+
+template<typename FieldT> void writeR1CS(std::ostream &out, const r1cs_constraint_system<FieldT> &cs) {
+  auto reg = regex(" ");
+  // TODO: report bug upstream
+  // pb.dump_variables();
+  // Protoboard::dump_variables appears not to be tested/maintained in upstream libsnark
+  // https://github.com/scipr-lab/libsnark/blob/92a80f74727091fdc40e6021dc42e9f6b67d5176/libsnark/gadgetlib1/protoboard.tcc#L130
+  for (size_t i = 0; i < cs.num_variables(); ++i)
+    {
+      auto it = cs.variable_annotations.find(i);
+      if (it != cs.variable_annotations.end()) {
+	out << "1 " << regex_replace(it->second, reg, "/") << "_v" << std::endl;
+      }
+    }
+
+  size_t index = 0;
+  for (const r1cs_constraint<FieldT>& c : cs.constraints)
+    {
+      auto it = cs.constraint_annotations.find(index);
+      if (it != cs.constraint_annotations.end()) {
+	out << "1 " << regex_replace(it->second, reg, "/") << endl;
+      }
+      /*
+      out << "    ";
+      writeLinComb(out, c.a, cs);
+      out << " * ";
+      writeLinComb(out, c.b, cs);
+      out << " == ";
+      writeLinComb(out, c.c, cs);
+      out << endl;
+      */
+      ++index;
+    }
+}
+
 template<size_t NumInputs, size_t NumOutputs>
 class JoinSplitCircuit : public JoinSplit<NumInputs, NumOutputs> {
 public:
@@ -90,7 +156,13 @@ public:
 
         auto r1cs = pb.get_constraint_system();
 
-        saveToFile(r1csPath, r1cs);
+	std::ofstream fh;
+	fh.open(r1csPath, std::ios::binary);
+	writeR1CS(fh, r1cs);
+	fh.flush();
+	fh.close();
+
+	return;
 
         r1cs_ppzksnark_keypair<ppzksnark_ppT> keypair = r1cs_ppzksnark_generator<ppzksnark_ppT>(r1cs);
 

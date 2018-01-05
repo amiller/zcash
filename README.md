@@ -1,57 +1,46 @@
-Zcash 1.0.14-rc1
-=============
+Zcash annotations
+=================
+This branch describes an experiment in visualizing SNARK proof systems, like those used in Zcash.
 
-What is Zcash?
---------------
+SNARK proof systems are encoded as "Rank 1 Constraint Systems." The proof system in Zcash has roughly 2M variables and 2M constraints. Each constraint relates some subset of variables to each other. The variables represent elements of a finite field (like modular arithmetic with a large prime number). Each constraint is of the form `(Ax)(Bx)=(Cx)`, where `A`,`B`,`C` are coefficient vectors, and `x` is the vector of variables.
 
-[Zcash](https://z.cash/) is an implementation of the "Zerocash" protocol.
-Based on Bitcoin's code, it intends to offer a far higher standard of privacy
-through a sophisticated zero-knowledge proving scheme that preserves
-confidentiality of transaction metadata. Technical details are available
-in our [Protocol Specification](https://github.com/zcash/zips/raw/master/protocol/protocol.pdf).
+This framework can express arbitrary computations. For example, to express that variable `X` is either 0 or 1, we would add the constraint `(1-X)(X)=0`.
 
-This software is the Zcash client. It downloads and stores the entire history
-of Zcash transactions; depending on the speed of your computer and network
-connection, the synchronization process could take a day or more once the
-blockchain has reached a significant size.
+The Zcash Sprout circuit is defined in the `zcash/circuit/` directory. It makes use of the libsnark `gadgetlib1` circuit composition framework, which is a modular way of building complex circuits using C++ functions and loops.
 
-Security Warnings
------------------
+The gadget library includes a framework for adding annotations to variables and constraints (they are ignored unless `DEBUG` is defined). These annotations are useful for understanding the structure of the circuit. Note that unlike the example gadgets provided in the libsnark, the new gadgets defined in Zcash do not supply annotations, but this branch fixes that. :)
+Using these annotations, we can export the circuit to a file, which we can then input into visualization tools and other libraries.
 
-See important security warnings on the
-[Security Information page](https://z.cash/support/security/).
+In this experiment, we just repurpose the "GenerateParams" utility to dump the circuit in a format resembling the output of the `du` (disk usage) utility. By feeding this into a treemap library, we get the following visualization of the Sprout circuit:
 
-**Zcash is experimental and a work-in-progress.** Use at your own risk.
+![zcash sprout circuit treemap](https://raw.githubusercontent.com/amiller/zcash/circuit-annotations/sprout-treemap.png)
 
-Deprecation Policy
-------------------
 
-This release is considered deprecated 16 weeks after the release day. There
-is an automatic deprecation shutdown feature which will halt the node some
-time after this 16 week time period. The automatic feature is based on block
-height and can be explicitly disabled.
+Instructions
+============
+1. Build the zcash dependences
+```sh
+zcutil/build.sh
+```
 
-Where do I begin?
------------------
-We have a guide for joining the main Zcash network:
-https://github.com/zcash/zcash/wiki/1.0-User-Guide
+2. To rebuild just the generation tool 
+```sh
+make src/zcash/GenerateParams
+```
 
-### Need Help?
+3. Generate the `sprout.du` file for input to the treemap software (takes ~120 seconds on my machine, `./sprout.du` is 548M large)
+```sh
+src/zcash/GenerateParams ./sproutpk ./sproutvk ./sprout.du
+```
 
-* See the documentation at the [Zcash Wiki](https://github.com/zcash/zcash/wiki)
-  for help and more information.
-* Ask for help on the [Zcash](https://forum.z.cash/) forum.
+4. Build the webtreemap tool
+```sh
+git submodule update --init --recursive
+cd webtreemap
+npm run build
+```
 
-Participation in the Zcash project is subject to a
-[Code of Conduct](code_of_conduct.md).
-
-Building
---------
-
-Build Zcash along with most dependencies from source by running
-./zcutil/build.sh. Currently only Linux is officially supported.
-
-License
--------
-
-For license information see the file [COPYING](COPYING).
+5. Generate (takes ~5 minutes on my machine, `sprout.html` is ~150M)
+```sh
+cat ../sprout.du | node --max-old-space-size=3000 build/cli.js --title 'Sprout R1CS (Vars+Constraints)' > ../sprout.html
+```
