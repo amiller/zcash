@@ -1,3 +1,3 @@
 [submodule "webtreemap"]
 	path = webtreemap
-	url = ./webtreemap/
+	url = https://github.com/evmar/webtreemap/
