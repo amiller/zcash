@@ -14,9 +14,6 @@ Each panel in the tree map represents a subcircuit, where its size indicates the
 
 To generate the screenshot above, we used the [webtreemap](https://github.com/evmar/webtreemap) library. We repurposed the "GenerateParams" utility to dump the Zcash circuit in a format resembling the output of the `du` (disk usage) utility, which the treemap library expects.
 
-Instructions
-============
-1. Build the zcash dependencies
 ```sh
 zcutil/build.sh
 ```

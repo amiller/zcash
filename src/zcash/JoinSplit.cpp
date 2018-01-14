@@ -96,35 +96,18 @@ template<typename FieldT> void writeLinComb(std::ostream &out, const linear_comb
 }
 
 template<typename FieldT> void writeR1CS(std::ostream &out, const r1cs_constraint_system<FieldT> &cs) {
-  auto reg = regex(" ");
-  // TODO: report bug upstream
-  // pb.dump_variables();
-  // Protoboard::dump_variables appears not to be tested/maintained in upstream libsnark
-  // https://github.com/scipr-lab/libsnark/blob/92a80f74727091fdc40e6021dc42e9f6b67d5176/libsnark/gadgetlib1/protoboard.tcc#L130
-  for (size_t i = 0; i < cs.num_variables(); ++i)
-    {
-      auto it = cs.variable_annotations.find(i);
-      if (it != cs.variable_annotations.end()) {
-	out << "1 " << regex_replace(it->second, reg, "/") << "_v" << std::endl;
-      }
-    }
 
   size_t index = 0;
   for (const r1cs_constraint<FieldT>& c : cs.constraints)
     {
       auto it = cs.constraint_annotations.find(index);
-      if (it != cs.constraint_annotations.end()) {
-	out << "1 " << regex_replace(it->second, reg, "/") << endl;
-      }
-      /*
-      out << "    ";
+      out << "    "; // indent for zokrates
       writeLinComb(out, c.a, cs);
       out << " * ";
       writeLinComb(out, c.b, cs);
       out << " == ";
       writeLinComb(out, c.c, cs);
       out << endl;
-      */
       ++index;
     }
 }
